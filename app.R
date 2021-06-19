@@ -1,4 +1,8 @@
 library(shiny)
+
+install.packages('glue')
+install.packages('stringr')
+
 library(glue)
 library(stringr)
 
