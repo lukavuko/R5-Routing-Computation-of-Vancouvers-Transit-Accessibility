@@ -81,8 +81,8 @@ ui <- shinyUI(
                                                       br(),
                                                       selectInput(inputId = "type_sco", label = "Amenity Type", choices = amenity_factor),
                                                       selectInput(inputId = "weight", label =  "Amenity Weights", choices= weight_factor),
-                                                      selectInput(inputId = "nearest_n", label =  "Nearest n Amenities", choices = nearest_n_factor),
-                                                      selectInput(inputId = 'stop_sco', label = "Include Bus Stops", choices = stops)
+                                                      selectInput(inputId = "nearest_n", label =  "Nearest n Amenities", choices = nearest_n_factor))
+                                                      #selectInput(inputId = 'stop_sco', label = "Include Bus Stops", choices = stops)
                                                       
                                         ),
                                     )),
