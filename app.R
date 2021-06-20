@@ -1,4 +1,5 @@
 library(shiny)
+library(shinybusy)
 library(glue)
 library(stringr)
 
@@ -9,12 +10,35 @@ library(tidyverse)
 library(readr)
 library(ggplot2)
 
+# functions
+#source('functions.R')
+
+# for unpuervised learning page
+library(cluster)
+library(FactoMineR)
+library(shinyalert)
+library(factoextra)
+
+# corr plot
+library("cowplot")
+library("corrplot")
+
+#  import data
+all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
+sumstat_df <- read_csv("datatable/summary_statistics_by_city.csv")[,-1]
+df_pca <- read_csv("datatable/pca_data_1.csv")
+df_pca <- data.frame(column_to_rownames(df_pca, var = "NAME"))
+df.num <- df_pca%>%select(where(is.numeric),-avg_score)
+colnames(df.num) <- c("SCORE","POPULATION","AMENITY","BUS STOPS","BUS FREQ","INDEX","TRANSIT TIME")
+
+
 # Directory path
 scoremap_dir <- "/maps/score_maps"
 kepmap_dir <- "/maps/kepler_maps/general"
 isomap_dir <- "/maps/isochrone_maps"
 effmap_dir <- "/maps/efficiency_maps"
 kepmap_dir_time_window <- "/maps/kepler_maps/time_window"
+compare_dir <- "/maps/kepler_maps/compare"
 
 # Add resource paths, with specific resource names
 addResourcePath('map_sco', paste0(getwd(), scoremap_dir))
@@ -22,6 +46,7 @@ addResourcePath('map_kep', paste0(getwd(), kepmap_dir))
 addResourcePath('map_iso', paste0(getwd(), isomap_dir)) 
 addResourcePath('map_eff', paste0(getwd(), effmap_dir)) 
 addResourcePath('kep_time', paste0(getwd(), kepmap_dir_time_window))
+addResourcePath('kep_com', paste0(getwd(), compare_dir))
 
 # Factor vector names
 amenity_factor <- c("Library or Archives", "Gallery", "Museum", "Theatre and Concert Hall")
@@ -31,91 +56,179 @@ stops <- c('No', 'Yes')
 efficiency_type <- c('Continuous', 'Discrete')
 day_factor <- c('Friday', 'Saturday', 'Sunday')
 
-#  import data
-all_df <- read.csv("datatable/all_data.csv")[,-1] 
-sumstat_df <- read_csv("datatable/summary_statistics_by_city.csv")[,-1]
-
 
 ui <- shinyUI(
+   # add_busy_spinner(spin = "fading-circle"),
     navbarPage("Vancouver Transit Accessibility to Cultural Amenities",
 
-                navbarMenu("Accessibility Measure Visualizations",
-                          "----",
-                            tabPanel("Score Measures", 
-                            div(class="outer",
-                                tags$head(includeCSS("styles.css"), includeScript("gomap.js")), # styles
-                                htmlOutput('map_sco'), # leaflet html map
-                                absolutePanel(id = "controls", class = "panel panel-default",
-                                            fixed = TRUE, draggable = TRUE,
-                                            top = 60, left = "auto", right = 20, bottom = "auto",
-                                            width = 330, height = "auto",
-                                            h2("Accessibility Explorer"),
-                                            selectInput(inputId = "type_sco", label = "Amenity Type", choices = amenity_factor),
-                                            selectInput(inputId = "weight", label =  "Amenity Weights", choices= weight_factor),
-                                            selectInput(inputId = "nearest_n", label =  "Nearest n Amenities", choices = nearest_n_factor),
-                                            selectInput(inputId = 'stop_sco', label = "Include Bus Stops", choices = stops)),
-                                # citations
-                                # tags$div(id="cite", 'Data compiled for ', tags$em('Citation Here'), ' by Author (Publisher, Year).')
-                            )),
-                            tabPanel("3D Score Measures",
-                            div(class="outer",
-                                tags$head(includeCSS("styles.css"), includeScript("gomap.js")), # styles
-                                htmlOutput('map_kep'), # kepler.gl html map
-                                absolutePanel(id = "controls", class = "panel panel-default",
-                                            fixed = TRUE, draggable = TRUE,
-                                            top = 60, left = "auto", right = 20, bottom = "auto",
-                                            width = 330, height = "auto",
-                                            h2("Accessibility Explorer"),
-                                            selectInput(inputId = "type_kep", label = "Amenity Type", choices = amenity_factor)),
-                                # citations
-                                # tags$div(id="cite", 'Data compiled for ', tags$em('Citation Here'), ' by Author (Publisher, Year).')
-                            )),
-                            tabPanel("Isochrone Measures",
-                            div(class="outer",
-                                tags$head(includeCSS("styles.css"), includeScript("gomap.js")), # styles
-                                htmlOutput('map_iso'), # get the map
-                                absolutePanel(id = "controls", class = "panel panel-default",
-                                            fixed = TRUE, draggable = TRUE,
-                                            top = 60, left = "auto", right = 20, bottom = "auto",
-                                            width = 330, height = "auto",
-                                            h2("Accessibility Explorer"),
-                                            selectInput(inputId = "type_iso", label = "Amenity Type", choices = amenity_factor),
-                                            selectInput(inputId = 'stop_iso', label = "Include Bus Stops", choices = stops)),
-                                # citations
-                                # tags$div(id="cite", 'Data compiled for ', tags$em('Citation Here'), ' by Author (Publisher, Year).')
-                            )),
-                            tabPanel("3D Time Window Comparison",
-                            div(class="outer",
-                                tags$head(includeCSS("styles.css"), includeScript("gomap.js")),# styles
-                                htmlOutput('keplertime'),
-                                absolutePanel(id = "controls", class = "panel panel-default",
-                                            fixed = TRUE, draggable = TRUE,
-                                            top = 60, left = "auto", right = 20, bottom = "auto",
-                                            width = 330, height = "auto",
-                                            h2("Accessibility Explorer"),
-                                            selectInput(inputId = "type_kep_time", label = "Amenity Type", choices = amenity_factor),
-                                            selectInput(inputId = "day_kep", label = "Day", choices = day_factor)),
-                                       
-                                # citations
-                                # tags$div(id="cite", 'Data compiled for ', tags$em('Citation Here'), ' by Author (Publisher, Year).')
-                                   )),
-                            tabPanel("Network Efficiency",
+                navbarMenu("Leaflet Accessibility Visualizations", 
+                           "----",
+                           tabPanel("Score Percentile Measures", 
                                     div(class="outer",
-                                        tags$head(includeCSS("styles.css"), includeScript("gomap.js")), # styles
-                                        htmlOutput('map_eff'), # get the map
-                                        # options panel
+                                        tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")), # styles
+                                        htmlOutput('map_sco'), # leaflet html map
+                                        absolutePanel(id = "title", class = "panel panel-default",
+                                                      top = 20, left = 65, right = "auto", bottom = "auto",
+                                                      width = "auto", height = "auto",
+                                                      h2('Score Percentile Measure')),
+                                        
                                         absolutePanel(id = "controls", class = "panel panel-default",
-                                                    fixed = TRUE, draggable = TRUE,
-                                                    top = 60, left = "auto", right = 20, bottom = "auto",
-                                                    width = 330, height = "auto",
-                                                    h2("Accessibility Explorer"),
-                                                    selectInput(inputId = 'type_eff', label = "Efficiency Type", choices = efficiency_type),
-                                                    selectInput(inputId = 'stop_eff', label = "Include Bus Stops", choices = stops)),
-                                        # citations
-                                        # tags$div(id="cite", 'Data compiled for ', tags$em('Citation Here'), ' by Author (Publisher, Year).')
+                                                      fixed = TRUE, draggable = TRUE,
+                                                      top = 70, left = "auto", right = 20, bottom = "auto",
+                                                      width = 360, height = "auto",
+                                                      h2("Accessibility Explorer"),
+                                                      h5("Score measures are based on the worst case scenario trip time where worst case is to the average time + 2 standard deviations. A higher score corresponds to a lower transit time, although the percentile is take to render it more interprettable."),
+                                                      br(),
+                                                      selectInput(inputId = "type_sco", label = "Amenity Type", choices = amenity_factor),
+                                                      selectInput(inputId = "weight", label =  "Amenity Weights", choices= weight_factor),
+                                                      selectInput(inputId = "nearest_n", label =  "Nearest n Amenities", choices = nearest_n_factor),
+                                                      selectInput(inputId = 'stop_sco', label = "Include Bus Stops", choices = stops)
+                                                      
+                                        ),
+                                    )),
+                           tabPanel("Isochrone Measures",
+                                    div(class="outer",
+                                        tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")), # styles
+                                        htmlOutput('map_iso'), # get the map
+                                        absolutePanel(id = "title", class = "panel panel-default",
+                                                      top = 20, left = 65, right = "auto", bottom = "auto",
+                                                      width = "auto", height = "auto",
+                                                      h2('Isochrone Measure')),
+                                        
+                                        absolutePanel(id = "controls", class = "panel panel-default",
+                                                      fixed = TRUE, draggable = TRUE,
+                                                      top = 60, left = "auto", right = 20, bottom = "auto",
+                                                      width = 360, height = "auto",
+                                                      h2("Accessibility Explorer"),
+                                                      h5("Isochrones show the time required to reach the nearest amenity."),
+                                                      br(),
+                                                      selectInput(inputId = "type_iso", label = "Amenity Type", choices = amenity_factor),
+                                                      selectInput(inputId = 'stop_iso', label = "Include Bus Stops", choices = stops)),
+                                    )),
+                           tabPanel("Network Efficiency",
+                                    div(class="outer",
+                                        tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")), # styles
+                                        htmlOutput('map_eff'), # get the map
+                                        absolutePanel(id = "title", class = "panel panel-default",
+                                                      top = 20, left = 65, right = "auto", bottom = "auto",
+                                                      width = "auto", height = "auto",
+                                                      h2('Network Efficiency')),
+                                        
+                                        absolutePanel(id = "controls", class = "panel panel-default",
+                                                      fixed = TRUE, draggable = TRUE,
+                                                      top = 60, left = "auto", right = 20, bottom = "auto",
+                                                      width = 360, height = "auto",
+                                                      h2("Accessibility Explorer"),
+                                                      h5("Efficiency is based on the difference between the accessibility score and the transit needs.
+                                                         Transit needs depend on the population size, the local amenity density, and the average amount of traffic in a ~5km region."),
+                                                      br(),
+                                                      selectInput(inputId = 'type_eff', label = "Efficiency Type", choices = efficiency_type),
+                                                      selectInput(inputId = 'stop_eff', label = "Include Bus Stops", choices = stops)),
                                     ))
                 ),
-               
+
+               navbarMenu("Kepler Accessibility Visualizations",
+                          "----",
+                          tabPanel("Score Percentile Measures",
+                                   div(class="outer",
+                                       tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")), # styles
+                                       htmlOutput('map_kep'),
+                                       absolutePanel(id = "title", class = "panel panel-default",
+                                                     top = 20, left = 65, right = "auto", bottom = "auto",
+                                                     width = "auto", height = "auto",
+                                                     h2('Score Percentile Measure')),
+                                       
+                                       absolutePanel(id = "controls", class = "panel panel-default",
+                                                     fixed = TRUE, draggable = TRUE,
+                                                     top = 60, left = "auto", right = 20, bottom = "auto",
+                                                     width = 360, height = "auto",
+                                                     h2("Accessibility Explorer"),
+                                                     h5("Score measures are based on the worst case scenario trip time where worst case is to the average time + 2 standard deviations. A higher score corresponds to a lower transit time, although the percentile is take to render it more interprettable."),
+                                                     br(),
+                                                     selectInput(inputId = "type_kep", label = "Amenity Type", choices = amenity_factor)),
+                                   )),
+                          tabPanel("Weekday/Weekend Score Percentile Comparison",
+                                   div(class="outer",
+                                       tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")), # styles
+                                       htmlOutput('kep_com'),
+                                       absolutePanel(id = "title", class = "panel panel-default",
+                                                     top = 20, left = 65, right = "auto", bottom = "auto",
+                                                     width = "auto", height = "auto",
+                                                     h2('Comparison Map for Weekend/Weekday Scores')),
+                                       
+                                       absolutePanel(id = "controls", class = "panel panel-default",
+                                                     fixed = TRUE, draggable = TRUE,
+                                                     top = 60, left = "auto", right = 20, bottom = "auto",
+                                                     width = 360, height = "auto",
+                                                     h2("Accessibility Explorer"),
+                                                     h4("Selected map score measure:"),
+                                                     h5("Score measures are based on the worst case scenario trip time where worst case is to the average time + 2 standard deviations. A higher score corresponds to a lower transit time."),
+                                                     br(),
+                                                     selectInput(inputId = "type_com", label = "Amenity Type", choices = amenity_factor)),
+                                   ))
+                          
+                          #tabPanel("3D Time Window",
+                          #div(class="outer",
+                          #    tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")),# styles
+                          #    htmlOutput('keplertime'),
+                          #    absolutePanel(id = "controls", class = "panel panel-default",
+                          #                fixed = TRUE, draggable = TRUE,
+                          #                top = 60, left = "auto", right = 20, bottom = "auto",
+                          #                width = 360, height = "auto",
+                          #                h2("Accessibility Explorer"),
+                          #                h4("Selected map score measure:"),
+                          #                h5("3D map based on the maximing time to get to the nearest amenity."),
+                          #                h4(),
+                          #                selectInput(inputId = "type_kep_time", label = "Amenity Type", choices = amenity_factor),
+                          #                selectInput(inputId = "day_kep", label = "Day", choices = day_factor)),
+                          #))
+                          
+               ),
+               tabPanel("Unsupervised Analysis",
+                        tags$div(
+                            sidebarPanel(
+                                selectInput("var","Select Variables:",
+                                            choices = colnames(df.num),
+                                            multiple = T,
+                                            selected=colnames(df.num)),
+                            ),
+                            mainPanel(
+                                tabsetPanel(
+                                    tabPanel("Scree Plot",
+                                             plotOutput("plot_scree")),
+                                    tabPanel("Correlation Plot",
+                                             plotOutput("plot_cor")),
+                                    tabPanel(" Contributions Plot",
+                                             plotOutput("plot_con")),
+                                    tabPanel("Individual Plot",
+                                             plotOutput("plot_ind")),
+                                    tabPanel("Biplot",
+                                             plotOutput("plot_bi")),
+                                    tabPanel("Clustering",
+                                             plotOutput("plot_cluster"))
+                                )))
+               ),
+               tabPanel("Data Explorer",
+                        tabPanel("summary_statistics", DT::dataTableOutput("summary_table")),
+                        
+                        # Create a new Row in the UI for selectInputs
+                        fluidRow(
+                            column(4,
+                                    selectInput("weights",
+                                                "Weights:",
+                                                choices=c("Yes"="yes","No"="no"),
+                                                selected = "Yes")
+                            ),
+                            column(4,
+                                    selectInput(inputId="nearest",
+                                                label="Access to:",
+                                                choices=c("All Amenities" = "avg_time_to_any_amenity",
+                                                          "Nearest Amenity" = "time_to_nearest_amenity"),
+                                                selected = "All Amenities")
+                            )
+                        ),
+                        plotOutput("subdivision_violin_plot", click = "plot_click")
+               ),
                tabPanel('About this Project',
                         tags$div(
                             tags$h2("Welcome!"),
@@ -193,96 +306,28 @@ ui <- shinyUI(
                             "Computer Science and Statistics",tags$br(),
                             "Faculty of Science,University of British Columbia",tags$br(),
                             tags$img(src = "logo.png", width = "550px", height = "200px")
-                )),
-               tabPanel("Data Explorer",
-                        tabPanel("summary_statistics", DT::dataTableOutput("summary_table")),
-                        
-                        # Create a new Row in the UI for selectInputs
-                        fluidRow(
-                            column(4,
-                                    selectInput("weights",
-                                                "Weights:",
-                                                choices=c("Yes"="yes","No"="no"),
-                                                selected = "yes")
-                            ),
-                            column(4,
-                                    selectInput(inputId="nearest",
-                                                label="N Amennity",
-                                                choices=c("All Amenity"="avg_time_to_any_amenity",
-                                                    "Nearest Amenity"="time_to_nearest_amenity"),
-                                                selected = "All Amenity")
-                            )
-                        ),
-                        plotOutput("plot_1", click = "plot_click"),
-               )
+                        ))
+               
     )
 )
 
+# show_modal_spinner(
+#spin = "cube-grid",
+#color = "firebrick",
+#text = "Please wait..."
+#)
+#remove_modal_spinner()
 
-    
 server <- function(input, output){
     
-    # select the data table 
-    output$summary_table = DT::renderDataTable({
-        sumstat_df
-    })
-
-    # plot based on the selected row shows that  total dissemination blocks
-    output$plot_1 <- renderPlot({
-
-        s = input$summary_table_rows_selected
-        sumstat_df <- sumstat_df[s,]
-        cities_to_keep <- sumstat_df$subdiv
-
-        # filter rows on these cities
-        all_data_small <- all_df %>% filter(subdiv %in% cities_to_keep)
-        
-        # ordered legend 
-        legend_ord <- levels(with(all_data_small, reorder(factor(subdiv), -avg_score_to_nearest_amenity, na.rm = TRUE)))
-        
-        p2 <- all_data_small %>% filter(weight == input$weights) %>%
-            ggplot(aes(y =reorder(factor(subdiv), avg_score_to_nearest_amenity, na.rm = TRUE),
-                       x = avg_score_to_nearest_amenity)) +
-            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) + 
-            scale_fill_discrete(breaks=legend_ord) +
-            scale_x_continuous("Average Accessibility Score",limits = c(0, 0.3), breaks=c(0,0.1,0.2,0.3)) +
-            guides(fill=guide_legend(title= 'Subdivision')) +
-            theme_minimal() +
-            theme(aspect.ratio = 1,
-                  text = element_text(size=20),
-                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
-                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
-                  panel.grid.minor.y = element_blank(),
-                  axis.title.y = element_blank(),
-                  axis.text.y = element_blank(),
-                  axis.ticks.y = element_blank()) 
-
-        # filter rows on specific subdiv and nearest_n
-        sub <- all_data_small %>% select(subdiv, input$nearest)
-        names(sub)[names(sub) == input$nearest] <- "amn"
-        legend_ord <- levels(with(sub, reorder(factor(subdiv), amn, na.rm = TRUE)))
-
-        p3 <- sub %>%
-            ggplot(aes(y =reorder(factor(subdiv),amn, na.rm = TRUE), x = (amn)))+
-            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) +
-            scale_fill_discrete(breaks=legend_ord) +
-            scale_x_continuous("Average Time in Minutes") +
-            guides(fill=guide_legend(title= 'Subdivision')) +
-            theme_minimal() +
-            theme(aspect.ratio = 1,
-                  text = element_text(size=20),
-                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
-                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
-                  panel.grid.minor.y = element_blank(),
-                  axis.title.y = element_blank(),
-                  axis.text.y = element_blank(),
-                  axis.ticks.y = element_blank())
-
-        ggarrange(p2, p3)
+    output$current_map <- renderText({
+       'Map Title Here'
     })
 
     # get html path
     getScore_map <- reactive({ 
+        #show_modal_spinner() # show the modal window
+        #remove_modal_spinner() # show the modal window
         amn_name <- input$type_sco
         weight <- str_to_lower(input$weight)
         nearest_n <- input$nearest_n
@@ -290,6 +335,8 @@ server <- function(input, output){
         html_file <- glue("{amn_name} - wt({weight}) - n({nearest_n}) - stops({stop})")
         return(glue('/{html_file}.html'))
     })
+    
+    
     
     getKepler_map <- reactive({ 
         amn_name <- input$type_kep
@@ -317,47 +364,182 @@ server <- function(input, output){
         html_file <-  glue('{amn_name} time {day}')
         return(glue('/{html_file}.html'))
     })
+    
+    getKepler_com <- reactive({ 
+        amn_name <- input$type_com
+        html_file <-  glue('{amn_name} compare')
+        return(glue('/{html_file}.html'))
+    })
 
     # this is where the resource path names are used
     # dynamic file calling
     output$map_sco <- renderUI({
         tags$iframe(seamless="seamless", src=paste0('map_sco', getScore_map()),
                     style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
-                    width='100%',
-                    height='100%') # dynamic height (100%) doesn't work so I set it manually
+                    width='100%', height='100%')
     })
     
     # dynamic file calling kepler map
     output$map_kep <- renderUI({
         tags$iframe(seamless="seamless", src=paste0('map_kep', getKepler_map()),
                     style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
-                    width='100%',
-                    height='100%') # dynamic height (100%) doesn't work so I set it manually
+                    width='100%', height='100%')
     })
     
     # dynamic file calling isochrone map
     output$map_iso <- renderUI({
         tags$iframe(seamless="seamless", src=paste0('map_iso', getIsochrone_map()),
                     style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
-                    width='100%',
-                    height='100%') # dynamic height (100%) doesn't work so I set it manually
+                    width='100%', height='100%')
     })
     
     # dynamic file calling efficiency map
     output$map_eff <- renderUI({
         tags$iframe(seamless="seamless", src=paste0('map_eff', getEfficiency_map()),
                     style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
-                    width='100%',
-                    height='100%') # dynamic height (100%) doesn't work so I set it manually
+                    width='100%', height='100%') 
     })
 
     # dynamic file calling kepler time window map
     output$keplertime <- renderUI({
         tags$iframe(seamless="seamless", src=paste0('kep_time', getKepler_time()),
                     style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
+                    width='100%', height='100%')
+    })
+    
+   
+    
+    output$kep_com <- renderUI({
+        tags$iframe(seamless="seamless", src=paste0('kep_com', getKepler_com()),
+                    style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
                     width='100%',
                     height='100%') # dynamic height (100%) doesn't work so I set it manually
     })
+    
+    # select the data table 
+    output$summary_table = DT::renderDataTable({
+        sumstat_df
+    })
+    
+    # plot based on the selected row shows that  total dissemination blocks
+    output$subdivision_violin_plot <- renderPlot({
+        
+        # user selected row indexing
+        rows_selected = input$summary_table_rows_selected
+        
+        # keep subdivisions in selected rows
+        cities_to_keep <- sumstat_df[rows_selected, 1]$subdiv
+        filtered_ams <- all_ams %>%
+            filter(subdiv %in% cities_to_keep & weight == input$weights)
+        
+        # ordered legend 
+        legend_ord_score <- levels(with(filtered_ams,
+                                        reorder(factor(subdiv), -avg_score_to_nearest_amenity, na.rm = TRUE)))
+        
+        score_plot <- filtered_ams %>% 
+            ggplot(aes(y = reorder(factor(subdiv), avg_score_to_nearest_amenity, na.rm = TRUE),
+                       x = avg_score_to_nearest_amenity)) +
+            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) + 
+            scale_fill_discrete(breaks = legend_ord_score) +
+            scale_x_continuous("Average Accessibility Score",limits = c(0, 0.3), breaks=c(0,0.1,0.2,0.3)) +
+            guides(fill= guide_legend(title = 'Subdivision')) +
+            theme_minimal() +
+            theme(aspect.ratio = 1,
+                  text = element_text(size=20),
+                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
+                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
+                  panel.grid.minor.y = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.text.y = element_blank(),
+                  axis.ticks.y = element_blank()) 
+        
+        
+        # change selected column name so it can be called as object in ggplot
+        sub <- filtered_ams %>% select(subdiv, input$nearest)
+        names(sub)[names(sub) == input$nearest] <- "selected_column"
+        
+        legend_ord_time <- levels(with(sub,
+                                       reorder(factor(subdiv), selected_column, na.rm = TRUE)))
+        
+        time_plot <- sub %>%
+            ggplot(aes(y = reorder(factor(subdiv), -selected_column, na.rm = TRUE), 
+                       x = selected_column)) +
+            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) +
+            scale_fill_discrete(breaks = legend_ord_time) +
+            scale_x_continuous("Average Time in Minutes") +
+            guides(fill = guide_legend(title = 'Subdivision')) +
+            theme_minimal() +
+            theme(aspect.ratio = 1,
+                  text = element_text(size=20),
+                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
+                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
+                  panel.grid.minor.y = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.text.y = element_blank(),
+                  axis.ticks.y = element_blank())
+        
+        ggarrange(score_plot, time_plot)
+    })
+    
+    # scree
+    output$plot_scree<- renderPlot({
+        df_1<-df.num%>%select(input$var)
+        res.pca <- prcomp(na.omit(df_1), scale = T)
+        #res.pca<-prcomp(df.st,scale = T)
+        eig.val <- get_eigenvalue(res.pca)
+        fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 70))
+    })
+    
+    #cor plot
+    output$plot_cor<- renderPlot({
+        df_1<-df.num%>%select(input$var)
+        res.pca <- prcomp(na.omit(df_1), scale = T)
+        var <- get_pca_var(res.pca)
+        corrplot(var$cos2, is.corr=FALSE)
+    })
+    # contribution plot
+    output$plot_con<- renderPlot({
+        df_1<-df.num%>%select(input$var)
+        res.pca <- prcomp(na.omit(df_1), scale = T)
+        # Contributions of variables to PC1
+        p1<-fviz_contrib(res.pca, choice = "var", axes = 1, top = 10)
+        # Contributions of variables to PC2
+        p2<-fviz_contrib(res.pca, choice = "var", axes = 2, top = 10)
+        
+        plot_grid(p1, p2, labels = "AUTO")
+    })
+    #ind plot
+    output$plot_ind<- renderPlot({
+        df_1<-df.num%>%select(input$var)
+        res.pca <- prcomp(na.omit(df_1), scale = T)
+        fviz_pca_ind(res.pca,
+                     col.ind = "cos2", # Color by the quality of representation
+                     gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                     repel = T     # Avoid text overlapping
+        ) +xlim(-9,6)+ylim(-2,2)
+    })
+    #bi plot plot
+    output$plot_bi<- renderPlot({
+        df_1<-df.num%>%select(input$var)
+        res.pca <- prcomp(na.omit(df_1), scale = T)
+        fviz_pca_biplot(res.pca, repel = TRUE, select.var = list(contrib =7),
+                        geom = c("text","point"),
+                        col.var = "#2E9FDF", # Variables color
+                        col.ind = "#696969"  # Individuals color
+        )
+    })
+    #clusteirn
+    output$plot_cluster<- renderPlot({
+        df_1<-df.num%>%select(input$var)
+        df_1<- scale(df_1)
+        # Compute k-means using 4 clusters
+        set.seed(123)
+        km.res <- kmeans(df_1, 4, nstart = 25)
+        # Plot the k-means clustering
+        fviz_cluster(km.res, df_1)+theme_minimal()
+        
+    })
+    
 }
     
 shinyApp(ui, server)
