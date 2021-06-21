@@ -4,24 +4,22 @@ library(glue)
 library(stringr)
 
 # for data table page
-library(DT)
+#library(DT)
 library(ggpubr)
 library(tidyverse)
-library(readr)
 library(ggplot2)
+#library(readr)
 
 # functions
 #source('functions.R')
 
 # for unpuervised learning page
-library(cluster)
-library(FactoMineR)
-library(shinyalert)
-library(factoextra)
-
-# corr plot
-library("cowplot")
-library("corrplot")
+#library(cluster)
+#library(FactoMineR)
+#library(shinyalert)
+#library(factoextra)
+#library("cowplot")
+#library("corrplot")
 
 #  import data
 all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
@@ -69,7 +67,7 @@ ui <- shinyUI(
                                         htmlOutput('map_sco'), # leaflet html map
                                         absolutePanel(id = "title", class = "panel panel-default",
                                                       top = 20, left = 65, right = "auto", bottom = "auto",
-                                                      width = "auto", height = "auto",
+                                                      width = "auto", height = "auto",draggable = TRUE,
                                                       h2('Score Percentile Measure')),
                                         
                                         absolutePanel(id = "controls", class = "panel panel-default",
@@ -91,7 +89,7 @@ ui <- shinyUI(
                                         htmlOutput('map_iso'), # get the map
                                         absolutePanel(id = "title", class = "panel panel-default",
                                                       top = 20, left = 65, right = "auto", bottom = "auto",
-                                                      width = "auto", height = "auto",
+                                                      width = "auto", height = "auto",draggable = TRUE,
                                                       h2('Isochrone Measure')),
                                         
                                         absolutePanel(id = "controls", class = "panel panel-default",
@@ -110,7 +108,7 @@ ui <- shinyUI(
                                         htmlOutput('map_eff'), # get the map
                                         absolutePanel(id = "title", class = "panel panel-default",
                                                       top = 20, left = 65, right = "auto", bottom = "auto",
-                                                      width = "auto", height = "auto",
+                                                      width = "auto", height = "auto",draggable = TRUE,
                                                       h2('Network Efficiency')),
                                         
                                         absolutePanel(id = "controls", class = "panel panel-default",
@@ -134,7 +132,7 @@ ui <- shinyUI(
                                        htmlOutput('map_kep'),
                                        absolutePanel(id = "title", class = "panel panel-default",
                                                      top = 20, left = 65, right = "auto", bottom = "auto",
-                                                     width = "auto", height = "auto",
+                                                     width = "auto", height = "auto",draggable = TRUE,
                                                      h2('Score Percentile Measure')),
                                        
                                        absolutePanel(id = "controls", class = "panel panel-default",
@@ -152,7 +150,7 @@ ui <- shinyUI(
                                        htmlOutput('kep_com'),
                                        absolutePanel(id = "title", class = "panel panel-default",
                                                      top = 20, left = 65, right = "auto", bottom = "auto",
-                                                     width = "auto", height = "auto",
+                                                     width = "auto", height = "auto",draggable = TRUE,
                                                      h2('Comparison Map for Weekend/Weekday Scores')),
                                        
                                        absolutePanel(id = "controls", class = "panel panel-default",
@@ -168,42 +166,47 @@ ui <- shinyUI(
                                    div(class="outer",
                                        tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")),# styles
                                        htmlOutput('keplertime'),
+                                       absolutePanel(id = "title", class = "panel panel-default",
+                                                     top = 20, left = 65, right = "auto", bottom = "auto",
+                                                     width = "auto", height = "auto", draggable = TRUE,
+                                                     h2('Transit Time to the Nearest Amenity')),
+                                       
                                        absolutePanel(id = "controls", class = "panel panel-default",
                                                      fixed = TRUE, draggable = TRUE,
                                                      top = 60, left = "auto", right = 20, bottom = "auto",
                                                      width = 360, height = "auto",
                                                      h2("Accessibility Explorer"),
                                                      h5("Isochrones show the time required to reach the nearest amenity."),
-                                                     br(),
-                                                     selectInput(inputId = "type_kep_time", label = "Amenity Type", choices = amenity_factor)
+                                                     br()
                                        ))
                           )
                           
                ),
-               tabPanel("Unsupervised Analysis",
-                        tags$div(
-                            sidebarPanel(
-                                selectInput("var","Select Variables:",
-                                            choices = colnames(df.num),
-                                            multiple = T,
-                                            selected=colnames(df.num))
-                            ),
-                            mainPanel(
-                                tabsetPanel(
-                                    tabPanel("Scree Plot",
-                                             plotOutput("plot_scree")),
-                                    tabPanel("Correlation Plot",
-                                             plotOutput("plot_cor")),
-                                    tabPanel(" Contributions Plot",
-                                             plotOutput("plot_con")),
-                                    tabPanel("Individual Plot",
-                                             plotOutput("plot_ind")),
-                                    tabPanel("Biplot",
-                                             plotOutput("plot_bi")),
-                                    tabPanel("Clustering",
-                                             plotOutput("plot_cluster"))
-                                )))
-               ),
+#               tabPanel("Unsupervised Analysis",
+#                        tags$div(
+#                     
+#                            sidebarPanel(
+#                                selectInput("var","Select Variables:",
+#                                            choices = colnames(df.num),
+#                                            multiple = T,
+#                                            selected=colnames(df.num))
+#                            ),
+#                            mainPanel(
+#                                tabsetPanel(
+#                                    tabPanel("Scree Plot",
+#                                             plotOutput("plot_scree")),
+#                                    tabPanel("Correlation Plot",
+#                                             plotOutput("plot_cor")),
+#                                    tabPanel(" Contributions Plot",
+#                                             plotOutput("plot_con")),
+#                                    tabPanel("Individual Plot",
+#                                             plotOutput("plot_ind")),
+#                                    tabPanel("Biplot",
+#                                             plotOutput("plot_bi")),
+#                                    tabPanel("Clustering",
+#                                             plotOutput("plot_cluster"))
+#                                )))
+#               ),
                tabPanel("Data Explorer",
                         tabPanel("summary_statistics", DT::dataTableOutput("summary_table")),
                         
@@ -226,14 +229,16 @@ ui <- shinyUI(
                         plotOutput("subdivision_violin_plot", click = "plot_click")
                ),
                tabPanel('About this Project',
-                        tags$div(
-                            tags$h2("Welcome!"),
-                            "The dashboard serves as a supplement tool  
+                        tags$div(style="margin: auto;padding-right: 80px;padding-left: 60px;",
+                                 tags$img(src = "headerlogo.png", style="max-width:100%;max-height:80%;"),
+                            tags$h2("Welcome!",style=" font-family:Papyrus, serif;"),
+                            
+                            tags$text("The dashboard serves as a supplement tool  
                     for our main project, A High Performing, 
                     Scalable Model forComputing and Visualizing Public Transit Accessibility,A Case Study on Cultural
-                    and Art Amenities in Metro Vancouver.",
-                            tags$br(),tags$br(),tags$h3("About the Dashbboard"),
-                            "This dashboard is used to visualize transit network accessibility
+                    and Art Amenities in Metro Vancouver.",style="font-size:20px"),
+                            tags$br(),tags$br(),tags$h3("About the Dashboard",style=" font-family:Papyrus, serif;"),
+                            tags$text("This dashboard is used to visualize transit network accessibility
                     in the Greater Vancouver area.
                     The main four tabs are Scores , Kepler.gl  ,Isochrones , Network Efficiency, 
                     the main purpose for those 4 tabs is to visualize  the transit accessibility 
@@ -250,76 +255,67 @@ ui <- shinyUI(
                     he Kepler.gl is designed for visualizing large -scale geolocation data,
                     which  has been built on top of Mapbox and deck.gl, we integrate the kepler.gl
                     in our dashboard to compare the changes of transit time from each block 
-                    to the nearest animenty of  selected.",
+                    to the nearest animenty of  selected.",style="font-size:20px"),
                             
-                            tags$br(),tags$br(),tags$h3("About the Project"),
+                            tags$br(),tags$br(),tags$h3("About the Project",style=" font-family:Papyrus, serif;"),
                             tags$h5("A High Performing, 
-                    Scalable Model forComputing and Visualizing Public Transit Accessibility,A Case Study on Cultural
-                    and Art Amenities in Metro Vancouver."),
-                            tags$br(),tags$h4("Introduction"),
-                            "Transportation network analysis is fundamental to urban planning 
+                    Scalable Model for Computing and Visualizing Public Transit Accessibility,A Case Study on Cultural
+                    and Art Amenities in Metro Vancouver.",style="font-size:20px;font-style: italic; font-family:Times, serif;"),
+                            
+                            tags$br(),tags$h4("Introduction",style=" font-family:Papyrus, serif;"),
+                            tags$text("Transportation network analysis is fundamental to urban planning 
                     for it determines how resources are distributed across a population. 
                     Resources come in the form of amenities such as grocery stores, schools,
                     parks, and hospitals. Our client, Statistics Canada produces data to better 
-                    understand Canadaâs population, resources, economy, society, and culture.
+                    understand Canada's population, resources, economy, society, and culture.
                     They have previously developed network accessibility measures based on distance 
-                    of driving, and walking to compute proximity scores for various types of amenities.",
+                    of driving, and walking to compute proximity scores for various types of amenities.",style="font-size:20px;"),
                             
-                            tags$br(),tags$h4("Problem"),
-                            "Accessibility measures based on time using transit have not yet been
+                            tags$br(),tags$h4("Problem",style=" font-family:Papyrus, serif;"),
+                            tags$text("Accessibility measures based on time using transit have not yet been
                     incorporated into proximity scores due to its multi-modal complexity 
                     and computational intensity. In 2016, 22.3% of Canadians depended on 
                     public transit in large cities; thus, incorporating transit accessibility
                     measures is paramount to not under-represent large segments of the population 
-                    which can inevitably worsen pre-existing inequalities in the urban landscape.",
+                    which can inevitably worsen pre-existing inequalities in the urban landscape.",style="font-size:20px"),
                             
-                            tags$br(),tags$br(),tags$h4("Object"),
-                            "The aim of this project was to establish a first iteration of an open source 
+                            tags$br(),tags$br(),tags$h4("Object",style=" font-family:Papyrus, serif;"),
+                            tags$text("The aim of this project was to establish a first iteration of an open source 
                     scalable framework for data collection and analysis of transit accessibility measures. 
                     We validated our framework on Vancouver, raising the question of, 
-                    âHow accessible are Vancouverâs cultural amenities (libraries, museums, 
-                    art galleries, and theatres) using the current transit system?â",
+                    How accessible are Vancouver's cultural amenities (libraries, museums, 
+                    art galleries, and theatres) using the current transit system?",style="font-size:20px"),
                             
-                            tags$br(),tags$br(),tags$h4("Methodology/Results:"),
-                            "To address the computational intensity of multimodal shortest path routing, we use Conveyalâs R5 
+                            tags$br(),tags$br(),tags$h4("Methodology/Results:",style=" font-family:Papyrus, serif;"),
+                            tags$text("To address the computational intensity of multimodal shortest path routing, we use Conveyalâs R5 
                     realistic routing algorithm available in R as r5r. It allows us to compute over 5.3 million transit
                     routes repeatedly, 360 times in a day over 3 days, in just a matter of one hour. The travel
                     time matrix was then used to develop three accessibility measures: one based on time, one on
                     scores, and one on percentiles which were visualized with Leaflet and Kepler.gl and embedded 
-                    in an R shiny dashboard. ",
+                    in an R shiny dashboard. ",style="font-size:20px"),
                             
-                            tags$br(),tags$br(),tags$h4("Conclusion:"),
-                            "This project provides a high performing and scalable framework for producing three unique 
+                            tags$br(),tags$br(),tags$h4("Conclusion:",style=" font-family:Papyrus, serif;"),
+                            tags$text("This project provides a high performing and scalable framework for producing three unique 
                     transit accessibility measures for network analysis using Greater Vancouver as an initial 
                     use-case scenario. The frameworks can be further developed and adopted by urban developers
-                    to ensure equitable, sustainable, and optimal urban design for years to come.",
+                    to ensure equitable, sustainable, and optimal urban design for years to come.",style="font-size:20px"),
                             
-                            tags$br(),tags$br(),tags$h4("Code"),
+                            tags$br(),tags$br(),tags$h4("Code",style=" font-family:Papyrus, serif;"),
                             "Code and more detailed information are available at ",
                             tags$a(href="https://github.com/ubco-mds-2020-labs/w2020-data599-capstone-projects-statistics-canada-transit", "Github."),
                             tags$br(),tags$br(),tags$h4("Authors"),
-                            "Graham Kerford,Luka Vukovic,Yuxuan Cui,Rain Shen",tags$br(),
-                            "Computer Science and Statistics",tags$br(),
-                            "Faculty of Science,University of British Columbia",tags$br(),
+                            tags$p("Graham Kerford,Luka Vukovic,Yuxuan Cui,Rain Shen", style="font-weight: bold;"),tags$br(),
+                            tags$p("Computer Science and Statistics", style="font-weight: bold;"),tags$br(),
+                            tags$p("Faculty of Science,University of British Columbia", style="font-weight: bold;"),tags$br(),
                             tags$img(src = "logo.png", width = "550px", height = "200px")
                         )
                )
     )
 )
 
-# show_modal_spinner(
-#spin = "cube-grid",
-#color = "firebrick",
-#text = "Please wait..."
-#)
-#remove_modal_spinner()
 
-server <- function(input, output){
+server <- function(input, output) {
     
-    output$current_map <- renderText({
-       'Map Title Here'
-    })
-
     # get html path
     getScore_map <- reactive({ 
         #show_modal_spinner() # show the modal window
@@ -331,8 +327,6 @@ server <- function(input, output){
         html_file <- glue("{amn_name} - wt({weight}) - n({nearest_n}) - stops(yes)")
         return(glue('/{html_file}.html'))
     })
-    
-    
     
     getKepler_map <- reactive({ 
         amn_name <- input$type_kep
@@ -353,11 +347,9 @@ server <- function(input, output){
         html_file <-  glue('{efficiency} Efficiency - stops({stop})')
         return(glue('/{html_file}.html'))
     })
-
+    
     getKepler_time <- reactive({ 
-        amn_name <- input$type_kep_time
-        #day <- input$day_kep
-        html_file <-  glue('{amn_name} time Friday')
+        html_file <-  "Friday_TimeWindow"
         return(glue('/{html_file}.html'))
     })
     
@@ -478,63 +470,63 @@ server <- function(input, output){
     })
     
     # scree
-    output$plot_scree<- renderPlot({
-        df_1<-df.num%>%select(input$var)
-        res.pca <- prcomp(na.omit(df_1), scale = T)
-        #res.pca<-prcomp(df.st,scale = T)
-        eig.val <- get_eigenvalue(res.pca)
-        fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 70))
-    })
+#    output$plot_scree<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        #res.pca<-prcomp(df.st,scale = T)
+#        eig.val <- get_eigenvalue(res.pca)
+#        fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 70))
+#    })
     
     #cor plot
-    output$plot_cor<- renderPlot({
-        df_1<-df.num%>%select(input$var)
-        res.pca <- prcomp(na.omit(df_1), scale = T)
-        var <- get_pca_var(res.pca)
-        corrplot(var$cos2, is.corr=FALSE)
-    })
+#    output$plot_cor<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        var <- get_pca_var(res.pca)
+#        corrplot(var$cos2, is.corr=FALSE)
+#    })
     # contribution plot
-    output$plot_con<- renderPlot({
-        df_1<-df.num%>%select(input$var)
-        res.pca <- prcomp(na.omit(df_1), scale = T)
-        # Contributions of variables to PC1
-        p1<-fviz_contrib(res.pca, choice = "var", axes = 1, top = 10)
-        # Contributions of variables to PC2
-        p2<-fviz_contrib(res.pca, choice = "var", axes = 2, top = 10)
+#    output$plot_con<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        # Contributions of variables to PC1
+#        p1<-fviz_contrib(res.pca, choice = "var", axes = 1, top = 10)
+#        # Contributions of variables to PC2
+#        p2<-fviz_contrib(res.pca, choice = "var", axes = 2, top = 10)
         
-        plot_grid(p1, p2, labels = "AUTO")
-    })
+#        plot_grid(p1, p2, labels = "AUTO")
+#    })
     #ind plot
-    output$plot_ind<- renderPlot({
-        df_1<-df.num%>%select(input$var)
-        res.pca <- prcomp(na.omit(df_1), scale = T)
-        fviz_pca_ind(res.pca,
-                     col.ind = "cos2", # Color by the quality of representation
-                     gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                     repel = T     # Avoid text overlapping
-        ) +xlim(-9,6)+ylim(-2,2)
-    })
+#    output$plot_ind<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        fviz_pca_ind(res.pca,
+#                     col.ind = "cos2", # Color by the quality of representation
+#                     gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                     repel = T     # Avoid text overlapping
+#        ) +xlim(-9,6)+ylim(-2,2)
+#    })
     #bi plot plot
-    output$plot_bi<- renderPlot({
-        df_1<-df.num%>%select(input$var)
-        res.pca <- prcomp(na.omit(df_1), scale = T)
-        fviz_pca_biplot(res.pca, repel = TRUE, select.var = list(contrib =7),
-                        geom = c("text","point"),
-                        col.var = "#2E9FDF", # Variables color
-                        col.ind = "#696969"  # Individuals color
-        )
-    })
+#    output$plot_bi<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        fviz_pca_biplot(res.pca, repel = TRUE, select.var = list(contrib =7),
+#                        geom = c("text","point"),
+#                        col.var = "#2E9FDF", # Variables color
+#                        col.ind = "#696969"  # Individuals color
+#        )
+#    })
     #clusteirn
-    output$plot_cluster<- renderPlot({
-        df_1<-df.num%>%select(input$var)
-        df_1<- scale(df_1)
-        # Compute k-means using 4 clusters
-        set.seed(123)
-        km.res <- kmeans(df_1, 4, nstart = 25)
+#    output$plot_cluster<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        df_1<- scale(df_1)
+#        # Compute k-means using 4 clusters
+#        set.seed(123)
+#        km.res <- kmeans(df_1, 4, nstart = 25)
         # Plot the k-means clustering
-        fviz_cluster(km.res, df_1)+theme_minimal()
+#        fviz_cluster(km.res, df_1)+theme_minimal()
         
-    })
+#    })
     
 }
     
