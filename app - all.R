@@ -1,14 +1,33 @@
 library(shiny)
+library(shinybusy)
 library(glue)
 library(stringr)
 
+# for data table page
+#library(DT)
+library(ggpubr)
+library(tidyverse)
+library(ggplot2)
+#library(readr)
+
+# functions
+#source('functions.R')
+
+# for unpuervised learning page
+#library(cluster)
+#library(FactoMineR)
+#library(shinyalert)
+#library(factoextra)
+#library("cowplot")
+#library("corrplot")
+
 #  import data
-#all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
-#sumstat_df <- read_csv("datatable/summary_statistics_by_city.csv")[,-1]
-#df_pca <- read_csv("datatable/pca_data_1.csv")
-#df_pca <- data.frame(column_to_rownames(df_pca, var = "NAME"))
-#df.num <- df_pca%>%select(where(is.numeric),-avg_score)
-#colnames(df.num) <- c("SCORE","POPULATION","AMENITY","BUS STOPS","BUS FREQ","INDEX","TRANSIT TIME")
+all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
+sumstat_df <- read_csv("datatable/summary_statistics_by_city.csv")[,-1]
+df_pca <- read_csv("datatable/pca_data_1.csv")
+df_pca <- data.frame(column_to_rownames(df_pca, var = "NAME"))
+df.num <- df_pca%>%select(where(is.numeric),-avg_score)
+colnames(df.num) <- c("SCORE","POPULATION","AMENITY","BUS STOPS","BUS FREQ","INDEX","TRANSIT TIME")
 
 
 # Directory path
@@ -33,6 +52,8 @@ weight_factor <- c('No', 'Yes')
 nearest_n_factor <- c('1', '2', '3', 'ALL')
 stops <- c('No', 'Yes')
 efficiency_type <- c('Continuous', 'Discrete')
+day_factor <- c('Friday', 'Saturday', 'Sunday')
+
 
 ui <- shinyUI(
    # add_busy_spinner(spin = "fading-circle"),
@@ -161,6 +182,52 @@ ui <- shinyUI(
                           )
                           
                ),
+#               tabPanel("Unsupervised Analysis",
+#                        tags$div(
+#                     
+#                            sidebarPanel(
+#                                selectInput("var","Select Variables:",
+#                                            choices = colnames(df.num),
+#                                            multiple = T,
+#                                            selected=colnames(df.num))
+#                            ),
+#                            mainPanel(
+#                                tabsetPanel(
+#                                    tabPanel("Scree Plot",
+#                                             plotOutput("plot_scree")),
+#                                    tabPanel("Correlation Plot",
+#                                             plotOutput("plot_cor")),
+#                                    tabPanel(" Contributions Plot",
+#                                             plotOutput("plot_con")),
+#                                    tabPanel("Individual Plot",
+#                                             plotOutput("plot_ind")),
+#                                    tabPanel("Biplot",
+#                                             plotOutput("plot_bi")),
+#                                    tabPanel("Clustering",
+#                                             plotOutput("plot_cluster"))
+#                                )))
+#               ),
+               tabPanel("Data Explorer",
+                        tabPanel("summary_statistics", DT::dataTableOutput("summary_table")),
+                        
+                        # Create a new Row in the UI for selectInputs
+                        fluidRow(
+                            column(4,
+                                    selectInput("weights",
+                                                "Weights:",
+                                                choices=c("Yes"="yes","No"="no"),
+                                                selected = "Yes")
+                            ),
+                            column(4,
+                                    selectInput(inputId="nearest",
+                                                label="Access to:",
+                                                choices=c("All Amenities" = "avg_time_to_any_amenity",
+                                                          "Nearest Amenity" = "time_to_nearest_amenity"),
+                                                selected = "All Amenities")
+                            )
+                        ),
+                        plotOutput("subdivision_violin_plot", click = "plot_click")
+               ),
                tabPanel('About this Project',
                         tags$div(style="margin: auto;padding-right: 80px;padding-left: 60px;",
                                  tags$img(src = "headerlogo.png", style="max-width:100%;max-height:80%;"),
@@ -246,10 +313,13 @@ ui <- shinyUI(
     )
 )
 
+
 server <- function(input, output) {
     
     # get html path
     getScore_map <- reactive({ 
+        #show_modal_spinner() # show the modal window
+        #remove_modal_spinner() # show the modal window
         amn_name <- input$type_sco
         weight <- str_to_lower(input$weight)
         nearest_n <- input$nearest_n
@@ -333,6 +403,130 @@ server <- function(input, output) {
                     width='100%',
                     height='100%') # dynamic height (100%) doesn't work so I set it manually
     })
+    
+    # select the data table 
+    output$summary_table = DT::renderDataTable({
+        sumstat_df
+    })
+    
+    # plot based on the selected row shows that  total dissemination blocks
+    output$subdivision_violin_plot <- renderPlot({
+        
+        # user selected row indexing
+        rows_selected = input$summary_table_rows_selected
+        
+        # keep subdivisions in selected rows
+        cities_to_keep <- sumstat_df[rows_selected, 1]$subdiv
+        filtered_ams <- all_ams %>%
+            filter(subdiv %in% cities_to_keep & weight == input$weights)
+        
+        # ordered legend 
+        legend_ord_score <- levels(with(filtered_ams,
+                                        reorder(factor(subdiv), -avg_score_to_nearest_amenity, na.rm = TRUE)))
+        
+        score_plot <- filtered_ams %>% 
+            ggplot(aes(y = reorder(factor(subdiv), avg_score_to_nearest_amenity, na.rm = TRUE),
+                       x = avg_score_to_nearest_amenity)) +
+            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) + 
+            scale_fill_discrete(breaks = legend_ord_score) +
+            scale_x_continuous("Average Accessibility Score",limits = c(0, 0.3), breaks=c(0,0.1,0.2,0.3)) +
+            guides(fill= guide_legend(title = 'Subdivision')) +
+            theme_minimal() +
+            theme(aspect.ratio = 1,
+                  text = element_text(size=20),
+                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
+                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
+                  panel.grid.minor.y = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.text.y = element_blank(),
+                  axis.ticks.y = element_blank()) 
+        
+        
+        # change selected column name so it can be called as object in ggplot
+        sub <- filtered_ams %>% select(subdiv, input$nearest)
+        names(sub)[names(sub) == input$nearest] <- "selected_column"
+        
+        legend_ord_time <- levels(with(sub,
+                                       reorder(factor(subdiv), selected_column, na.rm = TRUE)))
+        
+        time_plot <- sub %>%
+            ggplot(aes(y = reorder(factor(subdiv), -selected_column, na.rm = TRUE), 
+                       x = selected_column)) +
+            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) +
+            scale_fill_discrete(breaks = legend_ord_time) +
+            scale_x_continuous("Average Time in Minutes") +
+            guides(fill = guide_legend(title = 'Subdivision')) +
+            theme_minimal() +
+            theme(aspect.ratio = 1,
+                  text = element_text(size=20),
+                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
+                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
+                  panel.grid.minor.y = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.text.y = element_blank(),
+                  axis.ticks.y = element_blank())
+        
+        ggarrange(score_plot, time_plot)
+    })
+    
+    # scree
+#    output$plot_scree<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        #res.pca<-prcomp(df.st,scale = T)
+#        eig.val <- get_eigenvalue(res.pca)
+#        fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 70))
+#    })
+    
+    #cor plot
+#    output$plot_cor<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        var <- get_pca_var(res.pca)
+#        corrplot(var$cos2, is.corr=FALSE)
+#    })
+    # contribution plot
+#    output$plot_con<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        # Contributions of variables to PC1
+#        p1<-fviz_contrib(res.pca, choice = "var", axes = 1, top = 10)
+#        # Contributions of variables to PC2
+#        p2<-fviz_contrib(res.pca, choice = "var", axes = 2, top = 10)
+        
+#        plot_grid(p1, p2, labels = "AUTO")
+#    })
+    #ind plot
+#    output$plot_ind<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        fviz_pca_ind(res.pca,
+#                     col.ind = "cos2", # Color by the quality of representation
+#                     gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                     repel = T     # Avoid text overlapping
+#        ) +xlim(-9,6)+ylim(-2,2)
+#    })
+    #bi plot plot
+#    output$plot_bi<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        res.pca <- prcomp(na.omit(df_1), scale = T)
+#        fviz_pca_biplot(res.pca, repel = TRUE, select.var = list(contrib =7),
+#                        geom = c("text","point"),
+#                        col.var = "#2E9FDF", # Variables color
+#                        col.ind = "#696969"  # Individuals color
+#        )
+#    })
+    #clusteirn
+#    output$plot_cluster<- renderPlot({
+#        df_1<-df.num%>%select(input$var)
+#        df_1<- scale(df_1)
+#        # Compute k-means using 4 clusters
+#        set.seed(123)
+#        km.res <- kmeans(df_1, 4, nstart = 25)
+        # Plot the k-means clustering
+#        fviz_cluster(km.res, df_1)+theme_minimal()
+        
+#    })
     
 }
     

@@ -3,8 +3,9 @@
 # R code to install packages if not already installed
 #
 
-my_packages = c("glue", "stringr", "ggpubr", "tidyverse", "ggplot2")
+my_packages = c("glue", "stringr")
 #"DT", "readr", "cluster", "FactoMineR", "shinyalert", "factoextra", "cowplot", "corrplot"
+# "ggpubr", "tidyverse", "ggplot2"
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
