@@ -1,2 +1,3 @@
-FROM virtualstaticvoid/heroku-docker-r:build
-CMD ["/usr/bin/R", "--no-save", "-f", "/app/app.R"]
+FROM virtualstaticvoid/heroku-docker-r:shiny
+ENV PORT=8080
+CMD ["/usr/bin/R", "--no-save", "--gui-none", "-f", "/app/run.R"]
