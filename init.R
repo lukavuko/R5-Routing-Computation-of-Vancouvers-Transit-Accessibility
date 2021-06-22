@@ -30,11 +30,11 @@
 # THIS METHOD TIMES OUT AND DOESNT WORK!!
 #my_packages = c("stringr")
 
-install_if_missing = function(p) {
-  if (p %in% rownames(installed.packages()) == FALSE) {
-    install.packages(p, dependencies = c('Depends', 'Imports'), Ncpus = 4)
-  }
-}
+# install_if_missing = function(p) {
+#   if (p %in% rownames(installed.packages()) == FALSE) {
+#     install.packages(p, dependencies = c('Depends', 'Imports'), Ncpus = 4)
+#   }
+# }
 
 #invisible(sapply(my_packages, install_if_missing))
 

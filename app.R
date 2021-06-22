@@ -531,7 +531,11 @@ server <- function(input, output){
     #                  repel = T     # Avoid text overlapping
     #     ) +xlim(-9,6)+ylim(-2,2)
     # })
-    
+    autoInvalidate <- reactiveTimer(10000)
+    observe({
+        autoInvalidate()
+        cat(".")
+    })
 }
     
 shinyApp(ui, server)
