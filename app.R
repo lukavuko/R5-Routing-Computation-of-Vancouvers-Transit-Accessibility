@@ -2,10 +2,10 @@ library(shiny)
 library(glue)
 
 # for data table page
-library(DT)
-library(gridExtra)
-library(ggplot2)
-library(dplyr)
+#library(DT)
+#library(gridExtra)
+#library(ggplot2)
+#library(dplyr)
 
 # for unpuervised learning page # all caused problems
 #library(cluster)
@@ -16,6 +16,8 @@ library(dplyr)
 #  import data
 all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
 sumstat_df <- read.csv("datatable/summary_statistics_by_city.csv")[,-1]
+
+# for pca
 #df_pca <- read.csv("datatable/pca_data.csv")
 #df_pca <- data.frame(column_to_rownames(df_pca, var = "X"))
 #df.num <- df_pca %>% select(where(is.numeric))
@@ -46,7 +48,6 @@ nearest_n_factor <- c('1', '2', '3', 'ALL')
 stops <- c('No', 'Yes')
 efficiency_type <- c('Continuous', 'Discrete')
 day_factor <- c('Friday', 'Saturday', 'Sunday')
-
 
 
 ui <- shinyUI(
@@ -206,34 +207,34 @@ ui <- shinyUI(
             #         )
             #    ),
 
-               tabPanel("Data Explorer", width = 12,
-                        tags$div(style="margin: 20px; width: 80%"),
-                        fluidRow(column(titlePanel("Welcome to the Data Explorer"), width = 4, offset = 1)),
-                        hr(),
-                        fluidRow(align = "left",
-                            column(6, offset = 1, tags$h4("Click on rows in the data table to view accessibility distributions of that particular Vancouver City Subdivision.")),
-                            column(2, offset = 1, 
-                                   selectInput("weights", "Weights:",
-                                               choices=c("Yes"="yes","No"="no"),
-                                               selected = "Yes"),
-                                   selectInput(inputId="nearest", label="Access to:",
-                                                choices=c("All Amenities" = "avg_time_to_any_amenity",
-                                                          "Nearest Amenity" = "time_to_nearest_amenity"),
-                                               selected = "All Amenities"))
-                        ),
-                        hr(),
-                        fluidRow(align = "center",
-                            column(width = 9, offset = 1,
-                                   tabPanel("summary_statistics",
-                                             DT::dataTableOutput("summary_table"),
-                                             width = '95%'),
-                                   hr(),
-                                   plotOutput("subdivision_violin_plot", click = "plot_click",
-                                   width = '100%', height = '600px')
-                            )
-                        ), 
+            #    tabPanel("Data Explorer", width = 12,
+            #             tags$div(style="margin: 20px; width: 80%"),
+            #             fluidRow(column(titlePanel("Welcome to the Data Explorer"), width = 4, offset = 1)),
+            #             hr(),
+            #             fluidRow(align = "left",
+            #                 column(6, offset = 1, tags$h4("Click on rows in the data table to view accessibility distributions of that particular Vancouver City Subdivision.")),
+            #                 column(2, offset = 1, 
+            #                        selectInput("weights", "Weights:",
+            #                                    choices=c("Yes"="yes","No"="no"),
+            #                                    selected = "Yes"),
+            #                        selectInput(inputId="nearest", label="Access to:",
+            #                                     choices=c("All Amenities" = "avg_time_to_any_amenity",
+            #                                               "Nearest Amenity" = "time_to_nearest_amenity"),
+            #                                    selected = "All Amenities"))
+            #             ),
+            #             hr(),
+            #             fluidRow(align = "center",
+            #                 column(width = 9, offset = 1,
+            #                        tabPanel("summary_statistics",
+            #                                  DT::dataTableOutput("summary_table"),
+            #                                  width = '95%'),
+            #                        hr(),
+            #                        plotOutput("subdivision_violin_plot", click = "plot_click",
+            #                        width = '100%', height = '600px')
+            #                 )
+            #             ), 
                         
-               ),
+            #    ),
 
                
                tabPanel('About this Project',
@@ -410,64 +411,64 @@ server <- function(input, output){
     })
     
     # plot based on the selected row shows that  total dissemination blocks
-    output$subdivision_violin_plot <- renderPlot({
+    # output$subdivision_violin_plot <- renderPlot({
         
-        # user selected row indexing
-        rows_selected = input$summary_table_rows_selected
+    #     # user selected row indexing
+    #     rows_selected = input$summary_table_rows_selected
         
-        # keep subdivisions in selected rows
-        cities_to_keep <- sumstat_df[rows_selected, 1]#$subdiv
-        filtered_ams <- all_ams %>%
-            filter(subdiv %in% cities_to_keep & weight == input$weights)
+    #     # keep subdivisions in selected rows
+    #     cities_to_keep <- sumstat_df[rows_selected, 1]#$subdiv
+    #     filtered_ams <- all_ams %>%
+    #         filter(subdiv %in% cities_to_keep & weight == input$weights)
         
-        # ordered legend 
-        legend_ord_score <- levels(with(filtered_ams,
-                                        reorder(factor(subdiv), -avg_score_to_nearest_amenity, na.rm = TRUE)))
+    #     # ordered legend 
+    #     legend_ord_score <- levels(with(filtered_ams,
+    #                                     reorder(factor(subdiv), -avg_score_to_nearest_amenity, na.rm = TRUE)))
         
-        score_plot <- filtered_ams %>% 
-            ggplot(aes(y = reorder(factor(subdiv), avg_score_to_nearest_amenity, na.rm = TRUE),
-                       x = avg_score_to_nearest_amenity)) +
-            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) + 
-            scale_fill_discrete(breaks = legend_ord_score) +
-            scale_x_continuous("Average Score to Nearest Amenity",limits = c(0, 0.3), breaks=c(0,0.1,0.2,0.3)) +
-            guides(fill= guide_legend(title = 'Subdivision')) +
-            theme_minimal() +
-            theme(aspect.ratio = 1,
-                  text = element_text(size=20),
-                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
-                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
-                  panel.grid.minor.y = element_blank(),
-                  axis.title.y = element_blank(),
-                  axis.text.y = element_blank(),
-                  axis.ticks.y = element_blank()) 
+    #     score_plot <- filtered_ams %>% 
+    #         ggplot(aes(y = reorder(factor(subdiv), avg_score_to_nearest_amenity, na.rm = TRUE),
+    #                    x = avg_score_to_nearest_amenity)) +
+    #         geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) + 
+    #         scale_fill_discrete(breaks = legend_ord_score) +
+    #         scale_x_continuous("Average Score to Nearest Amenity",limits = c(0, 0.3), breaks=c(0,0.1,0.2,0.3)) +
+    #         guides(fill= guide_legend(title = 'Subdivision')) +
+    #         theme_minimal() +
+    #         theme(aspect.ratio = 1,
+    #               text = element_text(size=20),
+    #               panel.grid.major.x = element_line(colour="lightgray", size=0.05),
+    #               panel.grid.major.y = element_line(colour="lightgray", size=0.05),
+    #               panel.grid.minor.y = element_blank(),
+    #               axis.title.y = element_blank(),
+    #               axis.text.y = element_blank(),
+    #               axis.ticks.y = element_blank()) 
         
         
-        # change selected column name so it can be called as object in ggplot
-        sub <- filtered_ams %>% select(subdiv, input$nearest)
-        names(sub)[names(sub) == input$nearest] <- "selected_column"
+    #     # change selected column name so it can be called as object in ggplot
+    #     sub <- filtered_ams %>% select(subdiv, input$nearest)
+    #     names(sub)[names(sub) == input$nearest] <- "selected_column"
         
-        legend_ord_time <- levels(with(sub,
-                                       reorder(factor(subdiv), selected_column, na.rm = TRUE)))
+    #     legend_ord_time <- levels(with(sub,
+    #                                    reorder(factor(subdiv), selected_column, na.rm = TRUE)))
         
-        time_plot <- sub %>%
-            ggplot(aes(y = reorder(factor(subdiv), -selected_column, na.rm = TRUE), 
-                       x = selected_column)) +
-            geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) +
-            scale_fill_discrete(breaks = legend_ord_time) +
-            scale_x_continuous(paste0(input$nearest, " (minutes)")) +
-            guides(fill = guide_legend(title = 'Subdivision')) +
-            theme_minimal() +
-            theme(aspect.ratio = 1,
-                  text = element_text(size=20),
-                  panel.grid.major.x = element_line(colour="lightgray", size=0.05),
-                  panel.grid.major.y = element_line(colour="lightgray", size=0.05),
-                  panel.grid.minor.y = element_blank(),
-                  axis.title.y = element_blank(),
-                  axis.text.y = element_blank(),
-                  axis.ticks.y = element_blank())
+    #     time_plot <- sub %>%
+    #         ggplot(aes(y = reorder(factor(subdiv), -selected_column, na.rm = TRUE), 
+    #                    x = selected_column)) +
+    #         geom_violin(aes(fill = subdiv), scale = 'width', alpha = 0.4, draw_quantiles = c(0.5), size = 0.5) +
+    #         scale_fill_discrete(breaks = legend_ord_time) +
+    #         scale_x_continuous(paste0(input$nearest, " (minutes)")) +
+    #         guides(fill = guide_legend(title = 'Subdivision')) +
+    #         theme_minimal() +
+    #         theme(aspect.ratio = 1,
+    #               text = element_text(size=20),
+    #               panel.grid.major.x = element_line(colour="lightgray", size=0.05),
+    #               panel.grid.major.y = element_line(colour="lightgray", size=0.05),
+    #               panel.grid.minor.y = element_blank(),
+    #               axis.title.y = element_blank(),
+    #               axis.text.y = element_blank(),
+    #               axis.ticks.y = element_blank())
         
-        grid.arrange(score_plot, time_plot, ncol=2)
-    })
+    #     grid.arrange(score_plot, time_plot, ncol=2)
+    # })
     
     # #clusteirn
     # output$plot_cluster<- renderPlot({
