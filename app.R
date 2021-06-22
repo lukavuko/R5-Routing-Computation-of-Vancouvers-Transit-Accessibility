@@ -46,7 +46,7 @@ addResourcePath('kep_com', paste0(getwd(), compare_dir))
 amenity_factor <- c("Library or Archives", "Gallery", "Museum", "Theatre and Concert Hall")
 weight_factor <- c('no', 'yes')
 nearest_n_factor <- c('1', '2', '3', 'ALL')
-stops <- c('No', 'Yes')
+stops <- c('no', 'yes')
 efficiency_type <- c('Continuous', 'Discrete')
 day_factor <- c('Friday', 'Saturday', 'Sunday')
 
