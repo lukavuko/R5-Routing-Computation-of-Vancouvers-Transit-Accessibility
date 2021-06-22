@@ -14,8 +14,8 @@ library(glue)
 
 
 #  import data
-all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
-sumstat_df <- read.csv("datatable/summary_statistics_by_city.csv")[,-1]
+#all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
+#sumstat_df <- read.csv("datatable/summary_statistics_by_city.csv")[,-1]
 
 # for pca
 #df_pca <- read.csv("datatable/pca_data.csv")
@@ -27,7 +27,7 @@ sumstat_df <- read.csv("datatable/summary_statistics_by_city.csv")[,-1]
 
 # Directory path
 scoremap_dir <- "/maps/score_maps"
-kepmap_dir <- "/maps/kepler_maps/general"
+#kepmap_dir <- "/maps/kepler_maps/general"
 isomap_dir <- "/maps/isochrone_maps"
 effmap_dir <- "/maps/efficiency_maps"
 kepmap_dir_time_window <- "/maps/kepler_maps/time_window"
@@ -35,7 +35,7 @@ compare_dir <- "/maps/kepler_maps/compare"
 
 # Add resource paths, with specific resource names
 addResourcePath('map_sco', paste0(getwd(), scoremap_dir))
-addResourcePath('map_kep', paste0(getwd(), kepmap_dir))
+#addResourcePath('map_kep', paste0(getwd(), kepmap_dir))
 addResourcePath('map_iso', paste0(getwd(), isomap_dir)) 
 addResourcePath('map_eff', paste0(getwd(), effmap_dir)) 
 addResourcePath('kep_time', paste0(getwd(), kepmap_dir_time_window))
@@ -121,24 +121,24 @@ ui <- shinyUI(
 
                navbarMenu("Kepler (3D) Accessibility Visualizations",
                           "----",
-                          tabPanel("Score Percentile Measures",
-                                   div(class="outer",
-                                       tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")),
-                                       htmlOutput('map_kep'),
-                                       absolutePanel(id = "title", class = "panel panel-default",
-                                                     top = 20, left = 65, right = "auto", bottom = "auto",
-                                                     width = "auto", height = "auto",draggable = TRUE,
-                                                     h2('Score Percentile Measure')),
+                        #   tabPanel("Score Percentile Measures",
+                        #            div(class="outer",
+                        #                tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")),
+                        #                htmlOutput('map_kep'),
+                        #                absolutePanel(id = "title", class = "panel panel-default",
+                        #                              top = 20, left = 65, right = "auto", bottom = "auto",
+                        #                              width = "auto", height = "auto",draggable = TRUE,
+                        #                              h2('Score Percentile Measure')),
                                        
-                                       absolutePanel(id = "controls", class = "panel panel-default",
-                                                     fixed = TRUE, draggable = TRUE,
-                                                     top = 70, left = "auto", right = 20, bottom = "auto",
-                                                     width = 360, height = "auto",
-                                                     h2("Accessibility Explorer"),
-                                                     h5("Score measures are based on the worst case scenario trip time where worst case is to the average time + 2 standard deviations. A higher score corresponds to a lower transit time, although the percentile is taken to render it more interprettable."),
-                                                     br(),
-                                                     selectInput(inputId = "type_kep", label = "Amenity Type", choices = amenity_factor))
-                                   )),
+                        #                absolutePanel(id = "controls", class = "panel panel-default",
+                        #                              fixed = TRUE, draggable = TRUE,
+                        #                              top = 70, left = "auto", right = 20, bottom = "auto",
+                        #                              width = 360, height = "auto",
+                        #                              h2("Accessibility Explorer"),
+                        #                              h5("Score measures are based on the worst case scenario trip time where worst case is to the average time + 2 standard deviations. A higher score corresponds to a lower transit time, although the percentile is taken to render it more interprettable."),
+                        #                              br(),
+                        #                              selectInput(inputId = "type_kep", label = "Amenity Type", choices = amenity_factor))
+                        #            )),
                           tabPanel("Weekday/Weekend Isochrone Comparison",
                                    div(class="outer",
                                        tags$head(includeCSS("styles/styles.css"), includeScript("styles/gomap.js")), # styles
@@ -369,11 +369,11 @@ server <- function(input, output){
     })
     
     # dynamic file calling kepler map
-    output$map_kep <- renderUI({
-        tags$iframe(seamless="seamless", src=paste0('map_kep', getKepler_map()),
-                    style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
-                    width='100%', height='100%')
-    })
+    # output$map_kep <- renderUI({
+    #     tags$iframe(seamless="seamless", src=paste0('map_kep', getKepler_map()),
+    #                 style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;",
+    #                 width='100%', height='100%')
+    # })
     
     # dynamic file calling isochrone map
     output$map_iso <- renderUI({
