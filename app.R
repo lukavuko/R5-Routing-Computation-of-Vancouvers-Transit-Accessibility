@@ -149,7 +149,7 @@ ui <- shinyUI(
                                        absolutePanel(id = "title", class = "panel panel-default",
                                                      top = 20, left = 65, right = "auto", bottom = "auto",
                                                      width = "auto", height = "auto",draggable = TRUE,
-                                                     h2('Comparison Map for Weekend/Weekday Scores')),
+                                                     h2('Comparison Map for Weekend/Weekday Transit Times')),
                                        
                                        absolutePanel(id = "controls", class = "panel panel-default",
                                                      fixed = TRUE, draggable = TRUE,
