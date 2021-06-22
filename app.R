@@ -9,9 +9,9 @@ library(dplyr)
 library(ggplot2)
 library(tibble)
 library(tidyverse)
-library(readr)
+#library(readr) caused problems
 
-# for unpuervised learning page
+# for unpuervised learning page # all caused problems
 #library(cluster)
 #library(FactoMineR)
 #library(factoextra)
@@ -20,7 +20,7 @@ library(readr)
 
 #  import data
 all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility measures
-sumstat_df <- read_csv("datatable/summary_statistics_by_city.csv")[,-1]
+sumstat_df <- read.csv("datatable/summary_statistics_by_city.csv")[,-1]
 #df_pca <- read.csv("datatable/pca_data.csv")
 #df_pca <- data.frame(column_to_rownames(df_pca, var = "X"))
 #df.num <- df_pca %>% select(where(is.numeric))
@@ -421,7 +421,7 @@ server <- function(input, output){
         rows_selected = input$summary_table_rows_selected
         
         # keep subdivisions in selected rows
-        cities_to_keep <- sumstat_df[rows_selected, 1]$subdiv
+        cities_to_keep <- sumstat_df[rows_selected, 1]#$subdiv
         filtered_ams <- all_ams %>%
             filter(subdiv %in% cities_to_keep & weight == input$weights)
         

@@ -3,7 +3,7 @@
 # R code to install packages if not already installed
 #
 
-my_packages = c("glue", "stringr", "DT", "ggpubr", "ggplot2", "dplyr", "tibble", "readr")
+my_packages = c("glue", "stringr", "DT", "ggpubr", "ggplot2", "dplyr", "tibble")
 
 #, "cluster", "FactoMineR", "factoextra")
 
