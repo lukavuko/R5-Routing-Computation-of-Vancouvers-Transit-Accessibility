@@ -4,7 +4,7 @@ library(stringr)
 
 # for data table page
 library(DT)
-library(ggpubr)
+library(gridExtra)
 library(ggplot2)
 library(dplyr)
 
@@ -12,7 +12,6 @@ library(dplyr)
 #library(cluster)
 #library(FactoMineR)
 #library(factoextra)
-
 
 
 #  import data
@@ -468,7 +467,7 @@ server <- function(input, output){
                   axis.text.y = element_blank(),
                   axis.ticks.y = element_blank())
         
-        ggarrange(score_plot, time_plot)
+        grid.arrange(score_plot, time_plot, ncol=2)
     })
     
     # #clusteirn
