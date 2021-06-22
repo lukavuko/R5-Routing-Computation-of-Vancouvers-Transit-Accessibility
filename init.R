@@ -28,7 +28,7 @@
 # }
 
 # THIS METHOD TIMES OUT AND DOESNT WORK!!
-my_packages = c("stringr")
+#my_packages = c("stringr")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
@@ -36,7 +36,7 @@ install_if_missing = function(p) {
   }
 }
 
-invisible(sapply(my_packages, install_if_missing))
+#invisible(sapply(my_packages, install_if_missing))
 
 # ALETERNATIVE METHOD FROM LOCAL
 #install.packages("dplyr_1.0.7.tar.gz", repos=NULL, type="source")
