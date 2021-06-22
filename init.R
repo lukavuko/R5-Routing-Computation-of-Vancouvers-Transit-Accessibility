@@ -8,7 +8,7 @@ my_packages = c("DT", "ggpubr", "ggplot2", "dplyr")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
-    install.packages(p, dependencies = c('Depends'), Ncpus = 4)
+    install.packages(p, dependencies = c('Depends', 'Imports'), Ncpus = 4)
   }
 }
 
