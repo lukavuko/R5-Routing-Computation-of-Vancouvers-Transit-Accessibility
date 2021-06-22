@@ -1,6 +1,5 @@
 library(shiny)
 library(glue)
-library(stringr)
 
 # for data table page
 library(DT)
