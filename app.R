@@ -7,10 +7,15 @@ library(DT)
 library(ggpubr)
 library(dplyr)
 library(ggplot2)
+library(tibble)
+library(tidyverse)
+library(readr)
 
 # for unpuervised learning page
 library(cluster)
 library(FactoMineR)
+library(factoextra)
+
 
 
 #  import data
@@ -18,7 +23,7 @@ all_ams <- read.csv("datatable/all_data.csv")[,-c(1,2)]  # ams = accessibility m
 sumstat_df <- read_csv("datatable/summary_statistics_by_city.csv")[,-1]
 df_pca <- read.csv("datatable/pca_data.csv")
 df_pca <- data.frame(column_to_rownames(df_pca, var = "X"))
-df.num <- df_pca%>%select(where(is.numeric))
+df.num <- df_pca %>% select(where(is.numeric))
 
 
 #df_pca<-fread(file.path('../../../data/3_computed', '/unsupervised_data.csv'))
@@ -177,22 +182,23 @@ ui <- shinyUI(
                           
                ),
                tabPanel("Unsupervised Analysis",
-                        tags$div(
+                    fluidPage(align = "center",
+                        tags$div(style="margin: 20px; width: 95%; height: 95%",
                      
-                            sidebarPanel(
+                            sidebarPanel(width = 4,
                                 selectInput("var","Select Variables:",
                                             choices = colnames(df.num),
                                             multiple = T,
                                             selected=colnames(df.num))
                             ),
-                            mainPanel(
+                            mainPanel(width = 8,
                                 tabsetPanel(
                                     tabPanel("Clustering",
-                                             plotOutput("plot_cluster")),
+                                             plotOutput("plot_cluster", height = '700px')),
                                     tabPanel("Scree Plot",
-                                             plotOutput("plot_scree")),
+                                             plotOutput("plot_scree", height = '700px')),
                                     tabPanel("Biplot",
-                                             plotOutput("plot_bi"))
+                                             plotOutput("plot_bi", height = '700px'))
                                     # tabPanel("Correlation Plot",
                                     #          plotOutput("plot_cor")),
                                     # tabPanel(" Contributions Plot",
@@ -202,6 +208,7 @@ ui <- shinyUI(
                                 )
                             )
                         )
+                    )
                ),
 
                tabPanel("Data Explorer", width = 12,
