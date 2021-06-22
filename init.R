@@ -5,7 +5,6 @@
 
 my_packages = c("glue", "stringr", "DT", "ggpubr", "ggplot2", "dplyr", "tibble")
 
-#, "cluster", "FactoMineR", "factoextra")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {

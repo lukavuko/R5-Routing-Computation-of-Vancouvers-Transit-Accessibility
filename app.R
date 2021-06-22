@@ -5,10 +5,9 @@ library(stringr)
 # for data table page
 library(DT)
 library(ggpubr)
-library(dplyr)
 library(ggplot2)
+library(dplyr)
 library(tibble)
-library(tidyverse)
 #library(readr) caused problems
 
 # for unpuervised learning page # all caused problems
