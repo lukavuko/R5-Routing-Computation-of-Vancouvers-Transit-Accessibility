@@ -1,5 +1,6 @@
 library(shiny)
 library(glue)
+library(stringr)
 
 # for data table page
 #library(DT)
@@ -43,7 +44,7 @@ addResourcePath('kep_com', paste0(getwd(), compare_dir))
 
 # Factor vector names
 amenity_factor <- c("Library or Archives", "Gallery", "Museum", "Theatre and Concert Hall")
-weight_factor <- c('no', 'yes')
+weight_factor <- c('No', 'Yes')
 nearest_n_factor <- c('1', '2', '3', 'ALL')
 stops <- c('No', 'Yes')
 efficiency_type <- c('Continuous', 'Discrete')
@@ -320,7 +321,7 @@ server <- function(input, output){
     # get html path
     getScore_map <- reactive({ 
         amn_name <- input$type_sco
-        weight <- input$weight
+        weight <- str_to_lower(input$weight)
         nearest_n <- input$nearest_n
         html_file <- glue("{amn_name} - wt({weight}) - n({nearest_n}) - stops(yes)")
         return(glue('/{html_file}.html'))
