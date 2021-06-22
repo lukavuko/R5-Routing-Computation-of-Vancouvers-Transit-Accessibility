@@ -8,9 +8,10 @@ my_packages = c("DT", "ggpubr", "ggplot2", "dplyr")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
-    install.packages(p)
+    install.packages(p, dependencies = c('Depends'), Ncpus = 4)
   }
 }
+
 invisible(sapply(my_packages, install_if_missing))
 
 # ALETERNATIVE METHOD FROM LOCAL
@@ -18,8 +19,6 @@ invisible(sapply(my_packages, install_if_missing))
 #install.packages("DT_0.18.tar.gz", repos=NULL, type="source")
 #install.packages("ggplot2_3.3.4.tar.gz", repos=NULL, type="source")
 #install.packages("ggpubr_0.4.0.tar.gz", repos=NULL, type="source")
-#install.packages("glue_1.4.2.tar.gz", repos=NULL, type="source")
-
 
 
 
